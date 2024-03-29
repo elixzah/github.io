@@ -1,59 +1,56 @@
-// Gist ID of your public Gist
-const GIST_ID = '85b670b23351bf4aaa1e6c37a1a29606';
-// URL to fetch Gist content
-const GIST_URL = `https://api.github.com/gists/${GIST_ID}`;
-
-// Function to update like count on the UI
-function updateLikeCount(likeCount) {
-    document.getElementById('likeCount').textContent = likeCount;
+// Function to fetch the content of the GitHub Gist file
+function fetchLikeCount() {
+    fetch('https://gist.githubusercontent.com/elixzah/85b670b23351bf4aaa1e6c37a1a29606/raw/like.txt')
+        .then(response => response.text())
+        .then(data => {
+            // Update the like count value in the HTML
+            document.getElementById('like_count_value').textContent = data;
+        })
+        .catch(error => console.error('Error fetching like count:', error));
 }
 
-// Function to handle like button click
-async function handleLikeClick() {
-    try {
-        const response = await fetch(GIST_URL);
-        if (response.ok) {
-            const gistData = await response.json();
-            let likeCount = 0;
-            // Extract like count from Gist content
-            if (gistData.files && gistData.files['likes.txt']) {
-                likeCount = parseInt(gistData.files['likes.txt'].content) || 0;
-            }
-            // Increment like count
-            likeCount++;
-            // Update Gist content
-            await updateGist(likeCount);
-            // Update like count on UI
-            updateLikeCount(likeCount);
-        } else {
-            console.error('Failed to fetch Gist:', response.statusText);
-        }
-    } catch (error) {
-        console.error('Error:', error.message);
-    }
+// Function to update the like count in the GitHub Gist file
+function updateLikeCount(newCount) {
+    const gistUrl = 'https://gist.github.com/elixzah/85b670b23351bf4aaa1e6c37a1a29606';
+    fetch(gistUrl)
+        .then(response => response.json())
+        .then(data => {
+            // Update the content of the Gist file with the new like count
+            const updatedFileContent = {
+                ...data.files,
+                'like.txt': {
+                    filename: 'like.txt',
+                    content: newCount.toString()
+                }
+            };
+
+            fetch(gistUrl, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    files: updatedFileContent
+                }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: 'Bearer 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' // Add your GitHub token here
+                }
+            })
+            .then(() => console.log('Like count updated successfully'))
+            .catch(error => console.error('Error updating like count:', error));
+        })
+        .catch(error => console.error('Error fetching Gist details:', error));
 }
 
-// Function to update Gist content
-async function updateGist(likeCount) {
-    const requestBody = {
-        files: {
-            'likes.txt': {
-                content: likeCount.toString()
-            }
-        }
-    };
-    const response = await fetch(GIST_URL, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer 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` // Use environment variable
-        },
-        body: JSON.stringify(requestBody)
-    });
-    if (!response.ok) {
-        console.error('Failed to update Gist:', response.statusText);
-    }
-}
+// Call the fetchLikeCount function when the page loads
+window.onload = fetchLikeCount;
 
-// Add click event listener to the like button
-document.getElementById('likeButton').addEventListener('click', handleLikeClick);
+// Add event listener to the like button
+document.getElementById('like_button').addEventListener('click', function() {
+    // Get current like count
+    let currentCount = parseInt(document.getElementById('like_count_value').textContent);
+    // Increment like count
+    currentCount++;
+    // Update like count in HTML
+    document.getElementById('like_count_value').textContent = currentCount;
+    // Update like count in GitHub Gist file
+    updateLikeCount(currentCount);
+});
