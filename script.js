@@ -82,3 +82,4 @@ class TextScramble {
   }
   
   next()
+document.addEventListener('contextmenu', event => event.preventDefault());
